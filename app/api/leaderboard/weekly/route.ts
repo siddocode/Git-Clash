@@ -12,11 +12,6 @@ export async function GET() {
     let newAnonId: string | null = null;
     if (!anonId) {
       newAnonId = crypto.randomUUID();
-      await prisma.anonymousUser.upsert({
-        where: { id: newAnonId },
-        update: {},
-        create: { id: newAnonId },
-      });
     }
 
     const currentWeek = weekCount(new Date());
@@ -35,7 +30,12 @@ export async function GET() {
         parsed = cached;
       }
       if (parsed) {
-        const res = NextResponse.json(parsed, { status: 200 });
+        const res = NextResponse.json(parsed, {
+          status: 200,
+          headers: {
+            "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          },
+        });
         if (newAnonId) {
           res.cookies.set("anon_id", newAnonId, {
             path: "/",
@@ -85,9 +85,14 @@ export async function GET() {
         profile: p,
       }));
 
-      await redis.set(cacheKey, JSON.stringify(fallbackWeekly), { ex: 300 });
+      await redis.set(cacheKey, JSON.stringify(fallbackWeekly), { ex: 3600 });
 
-      const res = NextResponse.json(fallbackWeekly, { status: 200 });
+      const res = NextResponse.json(fallbackWeekly, {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      });
       if (newAnonId) {
         res.cookies.set("anon_id", newAnonId, {
           path: "/",
@@ -98,9 +103,14 @@ export async function GET() {
       return res;
     }
 
-    await redis.set(cacheKey, JSON.stringify(weeklyHistory), { ex: 300 });
+    await redis.set(cacheKey, JSON.stringify(weeklyHistory), { ex: 3600 });
 
-    const res = NextResponse.json(weeklyHistory, { status: 200 });
+    const res = NextResponse.json(weeklyHistory, {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    });
     if (newAnonId) {
       res.cookies.set("anon_id", newAnonId, {
         path: "/",

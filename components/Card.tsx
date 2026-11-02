@@ -206,6 +206,99 @@ export default function Card() {
     }
   };
 
+  const handleSkip = async () => {
+    if (skipping || votingIndex !== null || pair.length < 2) return;
+    setSkipping(true);
+
+    const currentQueue = [...queueRef.current];
+
+    if (currentQueue.length >= 2) {
+      // Instantly swap both cards from pre-fetched queue
+      const [nextA, nextB, ...restQueue] = currentQueue;
+      setQueue(restQueue);
+
+      setAnimatingOutIndex(-1);
+
+      setTimeout(() => {
+        setPair([nextA, nextB]);
+        setAnimatingOutIndex(null);
+        setAnimatingInIndex(-1);
+
+        setTimeout(() => {
+          setAnimatingInIndex(null);
+          setSkipping(false);
+        }, 220);
+      }, 120);
+
+      // Refill queue in background from /api/pair
+      try {
+        const res = await axios.get("/api/pair");
+        if (res.status === 200 && Array.isArray(res.data.queue)) {
+          setQueue((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            existingIds.add(nextA.id);
+            existingIds.add(nextB.id);
+            const fresh = res.data.queue.filter((p: ProfileCardData) => !existingIds.has(p.id));
+            return [...prev, ...fresh];
+          });
+        }
+      } catch {
+        // Background refill ignored
+      }
+      return;
+    }
+
+    if (currentQueue.length === 1) {
+      // Swap card 1 immediately with available queued challenger
+      const nextCard = currentQueue[0];
+      setQueue([]);
+
+      setAnimatingOutIndex(1);
+      setTimeout(() => {
+        setPair((prev) => [prev[0], nextCard]);
+        setAnimatingOutIndex(null);
+        setAnimatingInIndex(1);
+
+        setTimeout(() => {
+          setAnimatingInIndex(null);
+          setSkipping(false);
+        }, 220);
+      }, 120);
+
+      // Background refill pair
+      try {
+        const res = await axios.get("/api/pair");
+        if (res.status === 200 && Array.isArray(res.data.queue)) {
+          setQueue(res.data.queue);
+        }
+      } catch {
+        // Ignored
+      }
+      return;
+    }
+
+    // Queue is empty: fast fetch without unmounting card layout
+    try {
+      setAnimatingOutIndex(-1);
+      const res = await axios.get("/api/pair");
+      if (res.status === 200 && Array.isArray(res.data.result) && res.data.result.length >= 2) {
+        setPair(res.data.result);
+        if (Array.isArray(res.data.queue)) {
+          setQueue(res.data.queue);
+        }
+      }
+    } catch (err: unknown) {
+      console.error("Skip failed", err);
+    } finally {
+      setAnimatingOutIndex(null);
+      setAnimatingInIndex(-1);
+      setTimeout(() => {
+        setAnimatingInIndex(null);
+        setSkipping(false);
+      }, 220);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-20 flex flex-col items-center justify-center gap-3">
@@ -245,8 +338,8 @@ export default function Card() {
 
   const renderCard = (user: ProfileCardData, index: number) => {
     const isWinnerCelebration = winnerAnimationIndex === index;
-    const isAnimatingOut = animatingOutIndex === index;
-    const isAnimatingIn = animatingInIndex === index;
+    const isAnimatingOut = animatingOutIndex === index || animatingOutIndex === -1;
+    const isAnimatingIn = animatingInIndex === index || animatingInIndex === -1;
     const tier = getEloTier(user.elo);
     const scoreDiff = scoreGain && scoreGain.index === index ? scoreGain.delta : null;
 
@@ -416,10 +509,7 @@ export default function Card() {
       {/* Skip Matchup Button */}
       <div className="mt-6 flex items-center gap-3">
         <button
-          onClick={() => {
-            setSkipping(true);
-            showPair();
-          }}
+          onClick={handleSkip}
           disabled={skipping || votingIndex !== null}
           className="
             flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold
@@ -428,7 +518,7 @@ export default function Card() {
           "
         >
           <RotateCw size={13} className={skipping ? "animate-spin" : ""} />
-          <span>Skip Matchup</span>
+          <span>{skipping ? "Skipping..." : "Skip Matchup"}</span>
         </button>
       </div>
     </div>

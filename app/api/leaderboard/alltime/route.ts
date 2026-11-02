@@ -11,11 +11,6 @@ export async function GET() {
     let newAnonId: string | null = null;
     if (!anonId) {
       newAnonId = crypto.randomUUID();
-      await prisma.anonymousUser.upsert({
-        where: { id: newAnonId },
-        update: {},
-        create: { id: newAnonId },
-      });
     }
 
     // Check Redis cache first for instant response
@@ -32,7 +27,12 @@ export async function GET() {
         parsed = cached;
       }
       if (parsed) {
-        const res = NextResponse.json(parsed, { status: 200 });
+        const res = NextResponse.json(parsed, {
+          status: 200,
+          headers: {
+            "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          },
+        });
         if (newAnonId) {
           res.cookies.set("anon_id", newAnonId, {
             path: "/",
@@ -45,6 +45,7 @@ export async function GET() {
     }
 
     const records = await prisma.allTimeHistory.findMany({
+      take: 150,
       orderBy: [
         { weekCount: "desc" },
         { rank: "asc" },
@@ -91,10 +92,15 @@ export async function GET() {
       }));
     }
 
-    // Cache in Redis for 5 minutes
-    await redis.set("leaderboard:alltime", JSON.stringify(finalLeaderboard), { ex: 300 });
+    // Cache in Redis for 1 hour
+    await redis.set("leaderboard:alltime", JSON.stringify(finalLeaderboard), { ex: 3600 });
 
-    const res = NextResponse.json(finalLeaderboard, { status: 200 });
+    const res = NextResponse.json(finalLeaderboard, {
+      status: 200,
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    });
     if (newAnonId) {
       res.cookies.set("anon_id", newAnonId, {
         path: "/",

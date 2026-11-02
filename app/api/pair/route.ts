@@ -13,30 +13,18 @@ export async function GET() {
     const cookieStore = await cookies();
     let anonId = cookieStore.get("anon_id")?.value;
 
-    let res: NextResponse | null = null;
-
+    let newAnonId: string | null = null;
     if (!anonId) {
-      anonId = crypto.randomUUID();
-
-      res = NextResponse.json({});
-      res.cookies.set("anon_id", anonId, {
-        path: "/",
-        maxAge: 365 * 24 * 60 * 60,
-        httpOnly: true,
-      });
-
-      await prisma.anonymousUser.create({ data: { id: anonId } });
+      newAnonId = crypto.randomUUID();
+      anonId = newAnonId;
     }
 
-    await prisma.anonymousUser.upsert({
-      where: { id: anonId },
-      update: {},
-      create: { id: anonId },
-    });
+    const [cached, seenMembersRaw] = await Promise.all([
+      redis.get("profiles:list"),
+      anonId ? redis.smembers(`seen_pairs:${anonId}`) : Promise.resolve([]),
+    ]);
 
     let allProfiles: Profile[] | null = null;
-    const cached = await redis.get("profiles:list");
-
     if (cached) {
       if (typeof cached === "string") {
         try {
@@ -69,7 +57,7 @@ export async function GET() {
       B = allProfiles[Math.floor(Math.random() * allProfiles.length)];
     }
 
-    const seenMembers: string[] = (await redis.smembers(`seen_pairs:${anonId}`)) || [];
+    const seenMembers: string[] = (seenMembersRaw as string[]) || [];
     const seenSet = new Set(seenMembers);
 
     if (seenSet.has(pairKey(A.id, B.id))) {
@@ -109,7 +97,15 @@ export async function GET() {
       pool.push(remaining.splice(idx, 1)[0]);
     }
 
-    return NextResponse.json({ result: [A, B], queue: pool });
+    const response = NextResponse.json({ result: [A, B], queue: pool });
+    if (newAnonId) {
+      response.cookies.set("anon_id", newAnonId, {
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60,
+        httpOnly: true,
+      });
+    }
+    return response;
   } catch (err) {
     console.error("PAIR ERROR", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

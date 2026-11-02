@@ -82,8 +82,16 @@ export default function LeaderboardPage() {
         setLoadingWeekly(false);
       }
     }
-    fetchWeekly();
-  }, []);
+
+    // If user opens weekly tab or after all-time has finished, fetch weekly data
+    if (activeTab === "weekly" && weekly.length === 0) {
+      fetchWeekly();
+    } else if (!loadingAllTime && weekly.length === 0) {
+      // Background pre-fetch after all-time is already loaded
+      const timer = setTimeout(fetchWeekly, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, weekly.length, loadingAllTime]);
 
   const getEntryUsername = (entry: LeaderboardEntry): string => {
     return entry.profile?.username || entry.username || `dev-${entry.id}`;
@@ -235,9 +243,30 @@ export default function LeaderboardPage() {
 
         {/* Table Content */}
         {currentLoading ? (
-          <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-400">
-            <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-medium">Loading leaderboard records...</span>
+          <div className="py-2 divide-y divide-slate-200/40 dark:divide-white/5">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-12 items-center py-3.5 px-3 animate-pulse"
+              >
+                <div className="col-span-2 sm:col-span-1 flex items-center">
+                  <div className="h-6 w-6 rounded-lg bg-slate-200/80 dark:bg-white/10" />
+                </div>
+                <div className="col-span-5 sm:col-span-6 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-200/80 dark:bg-white/10" />
+                  <div className="space-y-1.5">
+                    <div className="h-4 w-28 sm:w-36 rounded-md bg-slate-200/80 dark:bg-white/10" />
+                    <div className="h-2.5 w-16 rounded bg-slate-100 dark:bg-white/5" />
+                  </div>
+                </div>
+                <div className="col-span-3 sm:col-span-3 flex justify-center">
+                  <div className="h-5 w-14 rounded-full bg-slate-200/80 dark:bg-white/10" />
+                </div>
+                <div className="col-span-2 sm:col-span-2 flex justify-end pr-2">
+                  <div className="h-4 w-10 rounded bg-slate-200/80 dark:bg-white/10" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : currentError ? (
           <div className="py-12 text-center text-sm text-rose-500">
