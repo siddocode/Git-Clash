@@ -74,16 +74,27 @@ body {
 }
 
 .winner-pulse {
-  animation: pulseGlow 1.2s ease-in-out;
+  animation: pulseGlow 0.8s ease-in-out;
 }
 
 @keyframes floatScore {
-  0% { opacity: 0; transform: translateY(10px) scale(0.8); }
-  20% { opacity: 1; transform: translateY(-5px) scale(1.1); }
-  80% { opacity: 1; transform: translateY(-12px) scale(1); }
-  100% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+  0% { opacity: 0; transform: translateY(6px) scale(0.85); }
+  18% { opacity: 1; transform: translateY(-4px) scale(1.1); }
+  75% { opacity: 1; transform: translateY(-12px) scale(1); }
+  100% { opacity: 0; transform: translateY(-22px) scale(0.92); }
 }
 
 .float-score-badge {
-  animation: floatScore 1.4s ease-out forwards;
+  animation: floatScore 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes numberBump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.elo-bump {
+  display: inline-block;
+  animation: numberBump 0.35s ease-out;
 }

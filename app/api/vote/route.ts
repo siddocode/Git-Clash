@@ -42,16 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid profiles" }, { status: 400 });
     }
 
-    // 2. Compute Elo delta
-    const K = 32;
-    const expectedWinner =
-      1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
-
-    const delta = Math.max(1, Math.round(K * (1 - expectedWinner)));
-    const newWinnerElo = winner.elo + delta;
-    const newLoserElo = Math.max(0, loser.elo - delta);
-
-    // 3. Update profiles in-memory from cached list to avoid a heavy table scan
+    // 2. Parse profiles in-memory from cached list
     let allProfiles: Profile[] = [];
     if (cachedProfiles && typeof cachedProfiles === "string") {
       try {
@@ -65,25 +56,25 @@ export async function POST(req: NextRequest) {
 
     if (allProfiles.length === 0) {
       allProfiles = await prisma.profile.findMany({ orderBy: { elo: "desc" } });
-    } else {
-      for (const p of allProfiles) {
-        if (p.id === winnerId) p.elo = newWinnerElo;
-        if (p.id === loserId) p.elo = newLoserElo;
-      }
-      allProfiles.sort((a, b) => b.elo - a.elo);
     }
 
-    const top10 = allProfiles.slice(0, 10);
+    const cachedWinner = allProfiles.find((p) => p.id === winnerId);
+    const cachedLoser = allProfiles.find((p) => p.id === loserId);
+
+    // Ensure we use the most recent Elo available (never revert to a stale snapshot)
+    const currentWinnerElo = Math.max(winner.elo, cachedWinner?.elo ?? 0);
+    const currentLoserElo = cachedLoser?.elo ?? loser.elo;
+
+    // Compute Elo delta
+    const K = 32;
+    const expectedWinner =
+      1 / (1 + Math.pow(10, (currentLoserElo - currentWinnerElo) / 400));
+
+    const delta = Math.max(1, Math.round(K * (1 - expectedWinner)));
     const key = pairKey(winnerId, loserId);
 
-    // 4. Execute database transaction and pipelined Redis write in parallel
-    const pipeline = redis.pipeline();
-    pipeline.sadd(`seen_pairs:${anonId}`, key);
-    pipeline.set("leaderboard:live", JSON.stringify(top10));
-    pipeline.set("profiles:list", JSON.stringify(allProfiles));
-    pipeline.smembers(`seen_pairs:${anonId}`);
-
-    const [, redisResults] = await Promise.all([
+    // 3. Execute database transaction with ATOMIC INCREMENT so concurrent fast votes never overwrite each other
+    const [txResults, seenMembersRaw] = await Promise.all([
       prisma.$transaction([
         prisma.anonymousUser.upsert({
           where: { id: anonId },
@@ -92,11 +83,13 @@ export async function POST(req: NextRequest) {
         }),
         prisma.profile.update({
           where: { id: winnerId },
-          data: { elo: newWinnerElo },
+          data: { elo: { increment: delta } },
+          select: { elo: true },
         }),
         prisma.profile.update({
           where: { id: loserId },
-          data: { elo: newLoserElo },
+          data: currentLoserElo <= delta ? { elo: 0 } : { elo: { decrement: delta } },
+          select: { elo: true },
         }),
         prisma.vote.create({
           data: { userId: anonId, winnerId, loserId },
@@ -116,11 +109,29 @@ export async function POST(req: NextRequest) {
           skipDuplicates: true,
         }),
       ]),
-      pipeline.exec(),
+      redis.smembers(`seen_pairs:${anonId}`),
     ]);
 
+    const finalWinnerElo = (txResults[1] as { elo: number }).elo;
+    const finalLoserElo = Math.max(0, (txResults[2] as { elo: number }).elo);
+
+    // Update in-memory cached list with authoritative post-increment values
+    for (const p of allProfiles) {
+      if (p.id === winnerId) p.elo = finalWinnerElo;
+      if (p.id === loserId) p.elo = finalLoserElo;
+    }
+    allProfiles.sort((a, b) => b.elo - a.elo);
+    const top10 = allProfiles.slice(0, 10);
+
+    // Update Redis cache in background
+    const pipeline = redis.pipeline();
+    pipeline.sadd(`seen_pairs:${anonId}`, key);
+    pipeline.set("leaderboard:live", JSON.stringify(top10));
+    pipeline.set("profiles:list", JSON.stringify(allProfiles));
+    pipeline.exec();
+
     // 5. Select next challenger for reigning winner
-    const seenMembers = (redisResults?.[3] as string[]) || [];
+    const seenMembers = (seenMembersRaw as string[]) || [];
     const seenSet = new Set(seenMembers);
     seenSet.add(key);
 
@@ -140,8 +151,8 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json(
       {
         success: true,
-        updatedWinnerElo: newWinnerElo,
-        updatedLoserElo: newLoserElo,
+        updatedWinnerElo: finalWinnerElo,
+        updatedLoserElo: finalLoserElo,
         delta,
         leaderboard: top10,
         nextProfile: nextChallenger,

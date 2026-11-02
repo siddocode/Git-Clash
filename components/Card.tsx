@@ -47,8 +47,13 @@ export default function Card() {
   const [winnerAnimationIndex, setWinnerAnimationIndex] = useState<number | null>(null);
   const [animatingOutIndex, setAnimatingOutIndex] = useState<number | null>(null);
   const [animatingInIndex, setAnimatingInIndex] = useState<number | null>(null);
-  const [scoreGain, setScoreGain] = useState<{ index: number; delta: number } | null>(null);
+  const [badge, setBadge] = useState<{ id: number; delta: number; key: number } | null>(null);
+  const [bumpId, setBumpId] = useState<number | null>(null);
   const [skipping, setSkipping] = useState(false);
+
+  const badgeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const bumpTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const badgeCounterRef = useRef(0);
 
   const queueRef = useRef<ProfileCardData[]>([]);
   queueRef.current = queue;
@@ -110,43 +115,55 @@ export default function Card() {
     const expectedWinner = 1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
     const estimatedDelta = Math.max(1, Math.round(K * (1 - expectedWinner)));
 
-    setScoreGain({ index: winnerIndex, delta: estimatedDelta });
+    // 2. Trigger snappy floating badge with unique key so it ALWAYS triggers on fast clicks
+    if (badgeTimerRef.current) clearTimeout(badgeTimerRef.current);
+    badgeCounterRef.current += 1;
+    setBadge({ id: winner.id, delta: estimatedDelta, key: badgeCounterRef.current });
+    badgeTimerRef.current = setTimeout(() => {
+      setBadge(null);
+    }, 900);
+
+    // 3. Trigger immediate number bump animation
+    if (bumpTimerRef.current) clearTimeout(bumpTimerRef.current);
+    setBumpId(winner.id);
+    bumpTimerRef.current = setTimeout(() => {
+      setBumpId(null);
+    }, 400);
+
     setWinnerAnimationIndex(winnerIndex);
     setAnimatingOutIndex(loserIndex);
 
-    // 2. Select pre-fetched challenger from memory queue for INSTANT swap
+    // 4. Instantly bump the winner's Elo on screen in 0 milliseconds
+    setPair((prev) => {
+      return prev.map((p) =>
+        p.id === winner.id ? { ...p, elo: p.elo + estimatedDelta } : p
+      );
+    });
+
+    // 5. Select pre-fetched challenger from memory queue for INSTANT swap
     let nextChallenger: ProfileCardData | null = null;
     const currentQueue = [...queueRef.current];
 
-    // Find a challenger in the queue not equal to winner or loser
     const candidateIdx = currentQueue.findIndex((p) => p.id !== winner.id && p.id !== loser.id);
     if (candidateIdx !== -1) {
       nextChallenger = currentQueue.splice(candidateIdx, 1)[0];
       setQueue(currentQueue);
     }
 
-    // 3. Immediately swap card without blocking on network!
     if (nextChallenger) {
       setTimeout(() => {
         setPair((prev) => {
-          if (prev.length < 2) return prev;
-          const next = [...prev];
-          next[winnerIndex] = {
-            ...next[winnerIndex],
-            elo: winner.elo + estimatedDelta,
-          };
-          next[loserIndex] = nextChallenger!;
-          return next;
+          return prev.map((p) => (p.id === loser.id ? nextChallenger! : p));
         });
 
         setAnimatingOutIndex(null);
         setAnimatingInIndex(loserIndex);
-        setTimeout(() => setAnimatingInIndex(null), 250);
+        setTimeout(() => setAnimatingInIndex(null), 200);
         setVotingIndex(null);
-      }, 120);
+      }, 100);
     }
 
-    // 4. Synchronize with backend API in background
+    // 6. Synchronize with backend API in background
     try {
       const res = await axios.post("/api/vote", {
         winnerId: winner.id,
@@ -154,29 +171,26 @@ export default function Card() {
       });
 
       if (res.status === 200) {
-        const actualDelta = res.data.delta || (res.data.updatedWinnerElo - winner.elo);
-        setScoreGain({ index: winnerIndex, delta: actualDelta });
-
-        // Update winner's exact server-validated rating
+        // Reconcile winner's rating: NEVER allow Elo to decrease after winning
         setPair((prev) => {
-          if (prev.length < 2) return prev;
-          const next = [...prev];
-          next[winnerIndex] = {
-            ...next[winnerIndex],
-            elo: res.data.updatedWinnerElo,
-          };
-
-          // If we had no queued challenger, swap in the server's challenger now
-          if (!nextChallenger && res.data.nextProfile) {
-            next[loserIndex] = res.data.nextProfile;
-            setAnimatingOutIndex(null);
-            setAnimatingInIndex(loserIndex);
-            setTimeout(() => setAnimatingInIndex(null), 250);
-            setVotingIndex(null);
-          }
-
-          return next;
+          return prev.map((p) => {
+            if (p.id === winner.id) {
+              return { ...p, elo: Math.max(p.elo, res.data.updatedWinnerElo) };
+            }
+            return p;
+          });
         });
+
+        // If no queued challenger was loaded at click time, swap in the server's challenger
+        if (!nextChallenger && res.data.nextProfile) {
+          setPair((prev) => {
+            return prev.map((p) => (p.id === loser.id ? res.data.nextProfile : p));
+          });
+          setAnimatingOutIndex(null);
+          setAnimatingInIndex(loserIndex);
+          setTimeout(() => setAnimatingInIndex(null), 200);
+          setVotingIndex(null);
+        }
 
         // Add server's fresh profile to the queue for upcoming rounds
         if (res.data.nextProfile) {
@@ -186,14 +200,13 @@ export default function Card() {
           });
         }
 
-        // Keep queue healthy (replenish if running low)
+        // Keep queue healthy
         if (currentQueue.length < 3) {
           replenishQueue(winner.id, loser.id);
         }
       }
     } catch (err: unknown) {
       console.error("Vote sync failed", err);
-      // If no challenger was loaded and vote failed, reload pair
       if (!nextChallenger) {
         await showPair();
       }
@@ -201,8 +214,7 @@ export default function Card() {
       setVotingIndex(null);
       setTimeout(() => {
         setWinnerAnimationIndex(null);
-        setScoreGain(null);
-      }, 1200);
+      }, 800);
     }
   };
 
@@ -341,7 +353,6 @@ export default function Card() {
     const isAnimatingOut = animatingOutIndex === index || animatingOutIndex === -1;
     const isAnimatingIn = animatingInIndex === index || animatingInIndex === -1;
     const tier = getEloTier(user.elo);
-    const scoreDiff = scoreGain && scoreGain.index === index ? scoreGain.delta : null;
 
     const avatarSrc =
       user.avatarUrl && user.avatarUrl.trim() !== ""
@@ -370,10 +381,13 @@ export default function Card() {
         `}
       >
         {/* Floating Score Badge on Win */}
-        {scoreDiff && (
-          <div className="absolute -top-3 right-6 z-20 float-score-badge bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-xs px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-            <Sparkles size={12} />
-            <span>+{scoreDiff} ELO</span>
+        {badge && badge.id === user.id && (
+          <div
+            key={badge.key}
+            className="absolute -top-3.5 right-6 z-30 float-score-badge bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-black text-xs px-3.5 py-1 rounded-full shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 pointer-events-none"
+          >
+            <Sparkles size={13} className="text-amber-200" />
+            <span>+{badge.delta} ELO</span>
           </div>
         )}
 
@@ -423,7 +437,7 @@ export default function Card() {
           {/* ELO Display */}
           <div className="mt-1 flex items-center gap-1.5 font-extrabold text-2xl text-emerald-600 dark:text-emerald-400">
             <Trophy size={20} className="text-amber-500" />
-            <span>{user.elo}</span>
+            <span className={bumpId === user.id ? "elo-bump" : ""}>{user.elo}</span>
             <span className="text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
               ELO
             </span>
