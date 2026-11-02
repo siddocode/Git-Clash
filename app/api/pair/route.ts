@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
+import type { Profile } from "@prisma/client";
 
 function pairKey(a: number, b: number) {
   return a < b ? `${a}:${b}` : `${b}:${a}`;
@@ -33,16 +34,25 @@ export async function GET() {
       create: { id: anonId },
     });
 
-    let allProfiles: any = await redis.get("profiles:list");
+    let allProfiles: Profile[] | null = null;
+    const cached = await redis.get("profiles:list");
 
-    if (!allProfiles) {
-      const fromDB = await prisma.profile.findMany();
-      await redis.set("profiles:list", JSON.stringify(fromDB), );
-      allProfiles = fromDB;
-    } else {
-      if (typeof allProfiles === "string") {
-        allProfiles = JSON.parse(allProfiles);
+    if (cached) {
+      if (typeof cached === "string") {
+        try {
+          allProfiles = JSON.parse(cached);
+        } catch {
+          allProfiles = null;
+        }
+      } else if (Array.isArray(cached)) {
+        allProfiles = cached as Profile[];
       }
+    }
+
+    if (!allProfiles || allProfiles.length < 2) {
+      const fromDB = await prisma.profile.findMany();
+      await redis.set("profiles:list", JSON.stringify(fromDB));
+      allProfiles = fromDB;
     }
 
     if (allProfiles.length < 2) {
@@ -59,10 +69,10 @@ export async function GET() {
       B = allProfiles[Math.floor(Math.random() * allProfiles.length)];
     }
 
-    const key = pairKey(A.id, B.id);
-    const seen = await redis.sismember(`seen_pairs:${anonId}`, key);
+    const seenMembers: string[] = (await redis.smembers(`seen_pairs:${anonId}`)) || [];
+    const seenSet = new Set(seenMembers);
 
-    if (seen) {
+    if (seenSet.has(pairKey(A.id, B.id))) {
       const shuffled = [...allProfiles];
 
       // Fisher–Yates shuffle
@@ -76,9 +86,7 @@ export async function GET() {
       for (let i = 0; i < shuffled.length; i++) {
         for (let j = i + 1; j < shuffled.length; j++) {
           const k = pairKey(shuffled[i].id, shuffled[j].id);
-          const seenBefore = await redis.sismember(`seen_pairs:${anonId}`, k);
-
-          if (!seenBefore) {
+          if (!seenSet.has(k)) {
             found = [shuffled[i], shuffled[j]];
             break;
           }
@@ -86,20 +94,22 @@ export async function GET() {
         if (found) break;
       }
 
-      if (!found) {
-        return NextResponse.json(
-          { error: "No fresh pair available" },
-          { status: 400 }
-        );
+      if (found) {
+        A = found[0];
+        B = found[1];
       }
-
-      A = found[0];
-      B = found[1];
+      // If all combinations have been seen, fall back to the random A and B
     }
 
-    await redis.sadd(`seen_pairs:${anonId}`, pairKey(A.id, B.id));
+    // Build a pre-fetched pool of candidates so the frontend has challengers ready in memory
+    const remaining = allProfiles.filter((p) => p.id !== A.id && p.id !== B.id);
+    const pool = [];
+    for (let i = 0; i < Math.min(6, remaining.length); i++) {
+      const idx = Math.floor(Math.random() * remaining.length);
+      pool.push(remaining.splice(idx, 1)[0]);
+    }
 
-    return NextResponse.json({ result: [A, B] });
+    return NextResponse.json({ result: [A, B], queue: pool });
   } catch (err) {
     console.error("PAIR ERROR", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

@@ -1,4 +1,5 @@
 import { redis } from "@/lib/redis";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   const encoder = new TextEncoder();
@@ -7,7 +8,42 @@ export async function GET() {
     new ReadableStream({
       start(controller) {
         let closed = false;
-        let interval: NodeJS.Timeout;
+
+        const send = async () => {
+          if (closed) return;
+
+          let leaderboard: unknown = await redis.get("leaderboard:live");
+          if (typeof leaderboard === "string") {
+            try {
+              leaderboard = JSON.parse(leaderboard);
+            } catch {
+              leaderboard = null;
+            }
+          }
+
+          if (!leaderboard) {
+            try {
+              const liveLeaderBoard = await prisma.profile.findMany({
+                orderBy: { elo: "desc" },
+                take: 10,
+              });
+              await redis.set("leaderboard:live", JSON.stringify(liveLeaderBoard));
+              leaderboard = liveLeaderBoard;
+            } catch {
+              leaderboard = [];
+            }
+          }
+
+          try {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(leaderboard || [])}\n\n`)
+            );
+          } catch {
+            cleanup();
+          }
+        };
+
+        const interval = setInterval(send, 3000);
 
         const cleanup = () => {
           if (!closed) {
@@ -19,25 +55,7 @@ export async function GET() {
           }
         };
 
-        const send = async () => {
-          if (closed) return;
-
-          let leaderboard = await redis.get("leaderboard:live");
-          if (typeof leaderboard === "string") {
-            leaderboard = JSON.parse(leaderboard);
-          }
-
-          try {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(leaderboard || [])}\n\n`)
-            );
-          } catch (err) {
-            cleanup(); 
-          }
-        };
-
-        send(); 
-        interval = setInterval(send, 3000);
+        send();
 
         return cleanup;
       },

@@ -43,49 +43,29 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    let candidates: Profile[] = [];
+    const seenMembers: string[] = (await redis.smembers(`seen_pairs:${anonId}`)) || [];
+    const seenSet = new Set(seenMembers);
 
-    for (const p of allProfiles) {
-      if (p.id === winnerId || p.id === loserId) continue;
+    let candidates: Profile[] = allProfiles.filter(
+      (p) => p.id !== winnerId && p.id !== loserId && !seenSet.has(pairKey(winnerId, p.id))
+    );
 
-      const seen = await redis.sismember(
-        `seen_pairs:${anonId}`,
-        pairKey(loserId, p.id)
+    if (candidates.length === 0) {
+      // Fallback: any candidate other than current pair
+      candidates = allProfiles.filter(
+        (p) => p.id !== winnerId && p.id !== loserId
       );
-
-      if (!seen) candidates.push(p);
     }
 
     if (candidates.length === 0) {
-      const allowWinner = !(await redis.sismember(
-        `seen_pairs:${anonId}`,
-        pairKey(loserId, winnerId)
-      ));
-
-      if (allowWinner) {
-        const winnerProfile = allProfiles.find((p) => p.id === winnerId);
-
-        if (!winnerProfile) {
-          return NextResponse.json(
-            { error: "Winner profile not found" },
-            { status: 400 }
-          );
-        }
-
-        candidates.push(winnerProfile);
-      } else {
-        return NextResponse.json(
-          { error: "No more fresh matches for this loser" },
-          { status: 400 }
-        );
-      }
+      return NextResponse.json(
+        { error: "No more profiles available" },
+        { status: 400 }
+      );
     }
-
 
     const nextProfile =
       candidates[Math.floor(Math.random() * candidates.length)];
-
-    await redis.sadd(`seen_pairs:${anonId}`, pairKey(winnerId, nextProfile.id));
 
     return NextResponse.json({ result: nextProfile });
   } catch (err) {

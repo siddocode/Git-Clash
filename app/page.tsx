@@ -4,25 +4,28 @@ import Hero from "@/components/Hero";
 import RankPage from "@/components/LiveRank";
 import UsernameInput from "@/components/UsernameInput";
 
-
 export default function HomePage() {
   return (
-    <div>
+    <div className="w-full flex flex-col items-center">
       <Hero />
-      <div className="">
+
+      {/* Head-to-Head Arena */}
+      <section className="w-full mt-2 mb-10">
         <Card />
-      </div>
-      <div className="pt-10">
+      </section>
+
+      {/* Enter Username Form */}
+      <section className="w-full mb-12">
         <UsernameInput />
-      </div>
+      </section>
 
-      <div className="pt-10">
+      {/* Live Ranking Stream */}
+      <section className="w-full mb-8">
         <RankPage />
-      </div>
+      </section>
 
-      <div className="pt-10">
-        <Footer />
-      </div>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

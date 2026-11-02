@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const pageKey = `leaderboard:page:${page}`;
   const totalKey = "leaderboard:totalCount";
 
-  let cached = await redis.get(pageKey);
+  const cached = await redis.get(pageKey);
 
   if (cached && typeof cached === "string") {
     try {
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     await redis.set(totalKey, total.toString(), { ex: 300 });
   }
 
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.max(1, Math.ceil(total / limit));
 
   const users = await prisma.profile.findMany({
     orderBy: { elo: "desc" },

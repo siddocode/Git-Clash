@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       const repos = await reposRes.json();
       const stars = Array.isArray(repos)
         ? repos.reduce(
-            (sum: number, repo: any) => sum + (repo.stargazers_count || 0),
+            (sum: number, repo: { stargazers_count?: number }) => sum + (repo.stargazers_count || 0),
             0
           )
         : 0;
@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
 
       const contrib = graphJson.data.user.contributionsCollection;
       const commits = (contrib.commitContributionsByRepository || []).reduce(
-        (sum: number, repo: any) =>
+        (sum: number, repo: { contributions?: { totalCount?: number } }) =>
           sum + (repo?.contributions?.totalCount || 0),
         0
       );

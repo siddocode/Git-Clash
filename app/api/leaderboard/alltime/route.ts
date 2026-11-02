@@ -1,52 +1,113 @@
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function GET(){
-    try {
-        const cookieStore = await cookies();
-        let anonId = cookieStore.get("anon_id")?.value;
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const anonId = cookieStore.get("anon_id")?.value;
 
-        if(!anonId){
-            anonId = crypto.randomUUID();
-            const res = NextResponse.json({created: true});
-            res.cookies.set("anon_id", anonId, {
-              path: "/",
-              httpOnly: true,
-              maxAge: 365 * 24 * 60 * 60,
-            });
-
-            await prisma.anonymousUser.create({
-                data: {
-                    id: anonId
-                }
-            });
-
-            return res;
-        }
-
-        await prisma.anonymousUser.upsert({
-          where: { id: anonId },
-          update: {},
-          create: { id: anonId },
-        });
-
-        const allTimeLeaderBoard = await prisma.allTimeHistory.findMany({
-            orderBy: [
-                {weekCount: "desc"},
-                {rank: "asc"}
-            ],
-            include: {profile: true}
-        });
-
-        if (allTimeLeaderBoard.length === 0) {
-          return NextResponse.json([], { status: 200 });
-        }
-
-
-        return NextResponse.json(allTimeLeaderBoard, {status: 200});
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({error: "AllTimeLeaderBoard Server Error"}, {status: 500});
+    let newAnonId: string | null = null;
+    if (!anonId) {
+      newAnonId = crypto.randomUUID();
+      await prisma.anonymousUser.upsert({
+        where: { id: newAnonId },
+        update: {},
+        create: { id: newAnonId },
+      });
     }
+
+    // Check Redis cache first for instant response
+    const cached: unknown = await redis.get("leaderboard:alltime");
+    if (cached) {
+      let parsed = null;
+      if (typeof cached === "string") {
+        try {
+          parsed = JSON.parse(cached);
+        } catch {
+          parsed = null;
+        }
+      } else if (Array.isArray(cached)) {
+        parsed = cached;
+      }
+      if (parsed) {
+        const res = NextResponse.json(parsed, { status: 200 });
+        if (newAnonId) {
+          res.cookies.set("anon_id", newAnonId, {
+            path: "/",
+            maxAge: 365 * 24 * 60 * 60,
+            httpOnly: true,
+          });
+        }
+        return res;
+      }
+    }
+
+    const records = await prisma.allTimeHistory.findMany({
+      orderBy: [
+        { weekCount: "desc" },
+        { rank: "asc" },
+        { elo: "desc" },
+      ],
+      include: { profile: true },
+    });
+
+    const seenProfileIds = new Set<number>();
+    const deduplicated = [];
+
+    for (const r of records) {
+      if (!seenProfileIds.has(r.profileId)) {
+        seenProfileIds.add(r.profileId);
+        deduplicated.push({
+          id: r.id,
+          rank: deduplicated.length + 1,
+          week: r.week,
+          weekCount: r.weekCount,
+          elo: r.profile?.elo ?? r.elo,
+          profileId: r.profileId,
+          profile: r.profile,
+        });
+        if (deduplicated.length >= 50) break;
+      }
+    }
+
+    let finalLeaderboard = deduplicated;
+
+    if (finalLeaderboard.length === 0) {
+      const liveProfiles = await prisma.profile.findMany({
+        orderBy: { elo: "desc" },
+        take: 50,
+      });
+
+      finalLeaderboard = liveProfiles.map((p, index) => ({
+        id: p.id,
+        rank: index + 1,
+        week: 1,
+        weekCount: 1,
+        elo: p.elo,
+        profileId: p.id,
+        profile: p,
+      }));
+    }
+
+    // Cache in Redis for 5 minutes
+    await redis.set("leaderboard:alltime", JSON.stringify(finalLeaderboard), { ex: 300 });
+
+    const res = NextResponse.json(finalLeaderboard, { status: 200 });
+    if (newAnonId) {
+      res.cookies.set("anon_id", newAnonId, {
+        path: "/",
+        maxAge: 365 * 24 * 60 * 60,
+        httpOnly: true,
+      });
+    }
+    return res;
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "AllTimeLeaderBoard Server Error" },
+      { status: 500 }
+    );
+  }
 }
