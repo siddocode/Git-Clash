@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import logo2 from "@/public/git-clash/logo2.jpg";
 import Link from "next/link";
-import { Trophy, Github, Sun, Moon, Menu, X, Swords } from "lucide-react";
+import { Trophy, Github, Sun, Moon, Menu, X, Swords, Radio } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 export default function Navbar() {
@@ -22,8 +22,8 @@ export default function Navbar() {
       "
     >
       <div className="max-w-5xl mx-auto flex justify-between items-center px-4 sm:px-6 py-3.5">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-300 dark:border-white/20 shadow-md group-hover:scale-105 transition-transform duration-200">
+        <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-slate-300 dark:border-white/20 shadow-md group-hover:scale-105 transition-transform duration-200 shrink-0">
             <Image
               className="object-cover w-full h-full"
               src={logo2}
@@ -31,7 +31,7 @@ export default function Navbar() {
               priority
             />
           </div>
-          <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent">
+          <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent">
             Git Clash
           </span>
         </Link>
@@ -157,6 +157,20 @@ export default function Navbar() {
           >
             <Trophy size={18} className="text-amber-500 dark:text-amber-400" />
             Leaderboard
+          </Link>
+
+          <Link
+            href="/liverank"
+            onClick={() => setOpen(false)}
+            className="
+              px-4 py-2.5 rounded-xl flex items-center gap-3
+              bg-slate-100/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 
+              hover:bg-emerald-500/20 hover:border-emerald-500/30
+              transition-all duration-200
+            "
+          >
+            <Radio size={18} className="text-emerald-500 dark:text-emerald-400" />
+            Live Rankings
           </Link>
 
           <a

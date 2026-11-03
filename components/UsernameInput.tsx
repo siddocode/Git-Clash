@@ -114,7 +114,7 @@ export default function UsernameInput() {
         onSubmit={handleInput}
         className="
           bg-white/85 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200/90 dark:border-white/10
-          shadow-xl rounded-2xl p-5 sm:p-6 w-full max-w-md
+          shadow-xl rounded-2xl p-4 sm:p-6 w-full max-w-md
           flex flex-col gap-3.5 hover:border-emerald-500/30 transition-all duration-200
         "
       >

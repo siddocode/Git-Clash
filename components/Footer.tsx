@@ -1,7 +1,7 @@
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-slate-200/80 dark:border-white/10 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
+    <footer className="w-full mt-12 sm:mt-16 border-t border-slate-200/80 dark:border-white/10 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 px-2">
         <span>Made with ♥ by{" "}
           <a
             href="https://portfolio-sid07.vercel.app/"

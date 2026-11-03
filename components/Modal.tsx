@@ -25,7 +25,7 @@ export default function Modal({
           />
 
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
             initial={{ scale: 0.94, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.94, opacity: 0, y: 10 }}
@@ -35,7 +35,8 @@ export default function Modal({
               className="
                 relative bg-white/95 dark:bg-slate-900/90 backdrop-blur-2xl
                 text-slate-900 dark:text-white border border-slate-200 dark:border-white/15
-                p-6 rounded-3xl shadow-2xl w-full max-w-[360px]
+                p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[360px]
+                max-h-[90vh] overflow-y-auto
               "
               onClick={(e) => e.stopPropagation()}
             >

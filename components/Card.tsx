@@ -38,6 +38,13 @@ function getEloTier(elo: number): { name: string; color: string } {
   return { name: "Contender", color: "text-emerald-500 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20" };
 }
 
+function formatStatNumber(val: number | null | undefined): string {
+  if (val === null || val === undefined) return "0";
+  if (val >= 1_000_000) return (val / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (val >= 10_000) return (val / 1_000).toFixed(1).replace(/\.0$/, "") + "k";
+  return val.toLocaleString();
+}
+
 export default function Card() {
   const [pair, setPair] = useState<ProfileCardData[]>([]);
   const [queue, setQueue] = useState<ProfileCardData[]>([]);
@@ -363,9 +370,9 @@ export default function Card() {
       <div
         key={user.id}
         className={`
-          relative w-full max-w-[340px] flex flex-col items-center
+          relative flex-1 min-w-0 max-w-[340px] flex flex-col items-center justify-between
           bg-white/90 dark:bg-slate-900/60 backdrop-blur-xl
-          border rounded-3xl p-6 transition-all duration-200
+          border rounded-2xl sm:rounded-3xl p-2.5 sm:p-5 md:p-6 transition-all duration-200
           ${
             isWinnerCelebration
               ? "winner-pulse border-emerald-500/80 shadow-2xl shadow-emerald-500/20 scale-[1.02]"
@@ -384,17 +391,17 @@ export default function Card() {
         {badge && badge.id === user.id && (
           <div
             key={badge.key}
-            className="absolute -top-3.5 right-6 z-30 float-score-badge bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-black text-xs px-3.5 py-1 rounded-full shadow-lg shadow-emerald-500/30 flex items-center gap-1.5 pointer-events-none"
+            className="absolute -top-3 sm:-top-3.5 right-1 sm:right-6 z-30 float-score-badge bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white font-black text-[10px] sm:text-xs px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full shadow-lg shadow-emerald-500/30 flex items-center gap-1 sm:gap-1.5 pointer-events-none"
           >
-            <Sparkles size={13} className="text-amber-200" />
+            <Sparkles size={11} className="text-amber-200 sm:w-[13px] sm:h-[13px]" />
             <span>+{badge.delta} ELO</span>
           </div>
         )}
 
-        {/* Tier Tag */}
-        <div className="w-full flex justify-between items-center mb-4">
+        {/* Top bar: Tier Tag & GitHub Link */}
+        <div className="w-full flex justify-between items-center mb-2 sm:mb-4 gap-1">
           <span
-            className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${tier.color}`}
+            className={`text-[9px] sm:text-[11px] font-semibold px-1.5 sm:px-2.5 py-0.5 rounded-full border leading-tight truncate ${tier.color}`}
           >
             {tier.name}
           </span>
@@ -402,16 +409,16 @@ export default function Card() {
             href={`https://github.com/${user.username}`}
             target="_blank"
             rel="noreferrer"
-            className="text-slate-400 hover:text-emerald-500 transition-colors"
+            className="text-slate-400 hover:text-emerald-500 transition-colors p-0.5 shrink-0"
             title="View GitHub profile"
           >
-            <ExternalLink size={15} />
+            <ExternalLink size={14} className="sm:w-[15px] sm:h-[15px]" />
           </a>
         </div>
 
         {/* Profile Avatar */}
-        <div className="relative group">
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/15 shadow-inner">
+        <div className="relative group shrink-0">
+          <div className="w-16 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-xl sm:rounded-2xl overflow-hidden border sm:border-2 border-slate-200 dark:border-white/15 shadow-inner">
             <Image
               src={avatarSrc}
               alt={user.username}
@@ -422,65 +429,71 @@ export default function Card() {
             />
           </div>
           {isWinnerCelebration && (
-            <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1 rounded-full shadow-lg">
-              <Trophy size={16} />
+            <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 bg-emerald-500 text-white p-0.5 sm:p-1 rounded-full shadow-lg">
+              <Trophy size={13} className="sm:w-4 sm:h-4" />
             </div>
           )}
         </div>
 
-        {/* User Details */}
-        <div className="flex flex-col items-center mt-3.5 text-center w-full">
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate max-w-[240px]">
+        {/* User Details & Stats */}
+        <div className="flex flex-col items-center mt-2 sm:mt-3.5 text-center w-full min-w-0 flex-1">
+          <h2 className="text-xs sm:text-base md:text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate max-w-full">
             {user.username}
           </h2>
 
           {/* ELO Display */}
-          <div className="mt-1 flex items-center gap-1.5 font-extrabold text-2xl text-emerald-600 dark:text-emerald-400">
-            <Trophy size={20} className="text-amber-500" />
+          <div className="mt-0.5 sm:mt-1 flex items-center gap-1 sm:gap-1.5 font-extrabold text-sm sm:text-xl md:text-2xl text-emerald-600 dark:text-emerald-400">
+            <Trophy size={14} className="sm:w-5 sm:h-5 text-amber-500 shrink-0" />
             <span className={bumpId === user.id ? "elo-bump" : ""}>{user.elo}</span>
-            <span className="text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
+            <span className="text-[9px] sm:text-xs font-semibold uppercase text-slate-400 dark:text-slate-500">
               ELO
             </span>
           </div>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 gap-2 w-full mt-4 text-xs">
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5">
-              <GitCommit size={14} className="text-emerald-500 shrink-0" />
-              <div className="flex flex-col text-left truncate">
-                <span className="text-slate-400 text-[10px]">Contributions</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">
-                  {user.totalContributions?.toLocaleString() ?? 0}
+          <div className="grid grid-cols-2 gap-1 sm:gap-2 w-full mt-2 sm:mt-4 text-xs">
+            <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded-lg sm:rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 min-w-0">
+              <GitCommit size={12} className="sm:w-3.5 sm:h-3.5 text-emerald-500 shrink-0" />
+              <div className="flex flex-col text-left min-w-0 truncate">
+                <span className="text-slate-400 text-[8px] sm:text-[10px] leading-tight truncate">
+                  <span className="hidden sm:inline">Contributions</span>
+                  <span className="sm:hidden">Contrib</span>
+                </span>
+                <span className="font-bold text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 leading-tight truncate">
+                  {formatStatNumber(user.totalContributions)}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5">
-              <Star size={14} className="text-amber-400 shrink-0" />
-              <div className="flex flex-col text-left truncate">
-                <span className="text-slate-400 text-[10px]">Stars</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">
-                  {user.stars?.toLocaleString() ?? 0}
+            <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded-lg sm:rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 min-w-0">
+              <Star size={12} className="sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
+              <div className="flex flex-col text-left min-w-0 truncate">
+                <span className="text-slate-400 text-[8px] sm:text-[10px] leading-tight truncate">Stars</span>
+                <span className="font-bold text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 leading-tight truncate">
+                  {formatStatNumber(user.stars)}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5">
-              <Users size={14} className="text-cyan-500 shrink-0" />
-              <div className="flex flex-col text-left truncate">
-                <span className="text-slate-400 text-[10px]">Followers</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">
-                  {user.followers?.toLocaleString() ?? 0}
+            <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded-lg sm:rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 min-w-0">
+              <Users size={12} className="sm:w-3.5 sm:h-3.5 text-cyan-500 shrink-0" />
+              <div className="flex flex-col text-left min-w-0 truncate">
+                <span className="text-slate-400 text-[8px] sm:text-[10px] leading-tight truncate">
+                  <span className="hidden sm:inline">Followers</span>
+                  <span className="sm:hidden">Follow</span>
+                </span>
+                <span className="font-bold text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 leading-tight truncate">
+                  {formatStatNumber(user.followers)}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5">
-              <FolderGit2 size={14} className="text-indigo-400 shrink-0" />
-              <div className="flex flex-col text-left truncate">
-                <span className="text-slate-400 text-[10px]">Repos</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">
-                  {user.repos?.toLocaleString() ?? 0}
+            <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2 rounded-lg sm:rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/60 dark:border-white/5 min-w-0">
+              <FolderGit2 size={12} className="sm:w-3.5 sm:h-3.5 text-indigo-400 shrink-0" />
+              <div className="flex flex-col text-left min-w-0 truncate">
+                <span className="text-slate-400 text-[8px] sm:text-[10px] leading-tight truncate">Repos</span>
+                <span className="font-bold text-[10px] sm:text-xs text-slate-800 dark:text-slate-200 leading-tight truncate">
+                  {formatStatNumber(user.repos)}
                 </span>
               </div>
             </div>
@@ -492,27 +505,29 @@ export default function Card() {
           onClick={() => handleVote(index)}
           disabled={votingIndex !== null}
           className="
-            mt-5 w-full py-2.5 px-4 rounded-xl font-bold text-sm
-            flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer shadow-md
+            mt-3 sm:mt-5 w-full py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl font-bold text-xs sm:text-sm
+            flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer shadow-md
             bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white hover:shadow-emerald-500/30
           "
         >
-          <Flame size={16} />
-          <span>Vote for {user.username}</span>
+          <Flame size={14} className="sm:w-4 sm:h-4 shrink-0" />
+          <span className="truncate">
+            Vote <span className="hidden sm:inline">for {user.username}</span>
+          </span>
         </button>
       </div>
     );
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full">
       {/* Cards Battle Arena */}
-      <div className="w-full flex flex-col md:flex-row items-center justify-center gap-5 sm:gap-8">
+      <div className="w-full relative flex flex-row items-stretch justify-center gap-2 sm:gap-6 md:gap-8">
         {renderCard(pair[0], 0)}
 
         {/* VS Divider Badge */}
-        <div className="flex flex-col items-center gap-1 my-1 md:my-0">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-xs tracking-wider bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20 border-2 border-white dark:border-slate-800">
+        <div className="shrink-0 flex items-center justify-center self-center z-20 -mx-3.5 sm:-mx-5 pointer-events-none">
+          <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-[9px] sm:text-xs tracking-wider bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xl shadow-emerald-500/30 border-2 border-white dark:border-slate-800 ring-2 ring-emerald-500/20">
             VS
           </div>
         </div>
@@ -521,12 +536,12 @@ export default function Card() {
       </div>
 
       {/* Skip Matchup Button */}
-      <div className="mt-6 flex items-center gap-3">
+      <div className="mt-4 sm:mt-6 flex items-center gap-3">
         <button
           onClick={handleSkip}
           disabled={skipping || votingIndex !== null}
           className="
-            flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold
+            flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-semibold
             text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10
             hover:bg-slate-200 dark:hover:bg-white/10 transition cursor-pointer shadow-sm
           "

@@ -147,19 +147,19 @@ export default function LeaderboardPage() {
           <span>← Back to Arena Battles</span>
         </Link>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           Developer Leaderboards
         </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 max-w-md">
+        <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md px-2">
           Explore historical rankings, weekly championship snapshots, and the all-time elite developers.
         </p>
 
         {/* Tab Controls */}
-        <div className="mt-6 flex p-1.5 rounded-2xl bg-slate-200/80 dark:bg-white/10 backdrop-blur-xl border border-slate-300/80 dark:border-white/10">
+        <div className="mt-4 sm:mt-6 w-full max-w-sm sm:max-w-md grid grid-cols-2 p-1 sm:p-1.5 rounded-2xl bg-slate-200/80 dark:bg-white/10 backdrop-blur-xl border border-slate-300/80 dark:border-white/10">
           <button
             onClick={() => setActiveTab("alltime")}
             className={`
-              flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer
+              flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer min-w-0
               ${
                 activeTab === "alltime"
                   ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-md"
@@ -167,9 +167,11 @@ export default function LeaderboardPage() {
               }
             `}
           >
-            <Trophy size={14} />
-            <span>All-Time Rankings</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-white/10">
+            <Trophy size={14} className="shrink-0" />
+            <span className="truncate">
+              <span className="hidden xs:inline">All-Time </span>Rankings
+            </span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-white/10 shrink-0">
               {allTime.length}
             </span>
           </button>
@@ -177,7 +179,7 @@ export default function LeaderboardPage() {
           <button
             onClick={() => setActiveTab("weekly")}
             className={`
-              flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer
+              flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-5 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer min-w-0
               ${
                 activeTab === "weekly"
                   ? "bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-md"
@@ -185,9 +187,11 @@ export default function LeaderboardPage() {
               }
             `}
           >
-            <Calendar size={14} />
-            <span>This Week&apos;s Snapshot</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-white/10">
+            <Calendar size={14} className="shrink-0" />
+            <span className="truncate">
+              <span className="hidden xs:inline">Weekly </span>Snapshot
+            </span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-white/10 shrink-0">
               {weekly.length}
             </span>
           </button>
@@ -195,9 +199,9 @@ export default function LeaderboardPage() {
       </div>
 
       {/* Main Leaderboard Table Container */}
-      <div className="w-full bg-white/85 dark:bg-slate-900/50 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl dark:shadow-2xl">
+      <div className="w-full bg-white/85 dark:bg-slate-900/50 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xl dark:shadow-2xl">
         {/* Table Search & Meta */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 mb-3 border-b border-slate-200/80 dark:border-white/10">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pb-4 mb-3 border-b border-slate-200/80 dark:border-white/10">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span>
@@ -230,14 +234,14 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Table Headers */}
-        <div className="grid grid-cols-12 py-2.5 px-3 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200/60 dark:border-white/5">
+        <div className="grid grid-cols-12 py-2 px-2 sm:px-3 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200/60 dark:border-white/5">
           <span className="col-span-2 sm:col-span-1">Rank</span>
-          <span className="col-span-5 sm:col-span-6">Developer</span>
-          <span className="col-span-3 sm:col-span-3 text-center">
-            {activeTab === "alltime" ? "ELO Rating" : "Score"}
+          <span className="col-span-6 sm:col-span-6">Developer</span>
+          <span className="col-span-2 sm:col-span-3 text-center">
+            {activeTab === "alltime" ? "ELO" : "Score"}
           </span>
-          <span className="col-span-2 sm:col-span-2 text-right pr-2">
-            {activeTab === "alltime" ? "Top Weeks" : "GitHub"}
+          <span className="col-span-2 sm:col-span-2 text-right pr-1 sm:pr-2">
+            {activeTab === "alltime" ? "Top Wks" : "GitHub"}
           </span>
         </div>
 
@@ -290,7 +294,7 @@ export default function LeaderboardPage() {
               return (
                 <div
                   key={`${entry.id}-${username}-${index}`}
-                  className="grid grid-cols-12 py-3 px-3 items-center rounded-xl hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors"
+                  className="grid grid-cols-12 py-2.5 sm:py-3 px-2 sm:px-3 items-center rounded-xl hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors"
                 >
                   {/* Rank */}
                   <div className="col-span-2 sm:col-span-1 flex items-center">
@@ -298,8 +302,8 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Profile info */}
-                  <div className="col-span-5 sm:col-span-6 flex items-center gap-3 truncate">
-                    <div className="w-8 h-8 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/10 shadow-sm">
+                  <div className="col-span-6 sm:col-span-6 flex items-center gap-2 sm:gap-3 min-w-0 pr-1">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-white/10 shadow-sm">
                       <Image
                         src={avatar}
                         alt={username}
@@ -309,12 +313,12 @@ export default function LeaderboardPage() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex flex-col truncate">
-                      <span className="font-bold text-slate-900 dark:text-white text-sm truncate">
+                    <div className="flex flex-col min-w-0 truncate">
+                      <span className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
                         {username}
                       </span>
                       {activeTab === "alltime" && (
-                        <span className="text-[10px] text-slate-400 truncate">
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 truncate">
                           Profile ID #{entry.profileId || entry.id}
                         </span>
                       )}
@@ -322,16 +326,16 @@ export default function LeaderboardPage() {
                   </div>
 
                   {/* Score */}
-                  <div className="col-span-3 sm:col-span-3 text-center">
-                    <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                  <div className="col-span-2 sm:col-span-3 text-center">
+                    <span className="font-extrabold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">
                       {elo}
                     </span>
                   </div>
 
                   {/* Fourth column: Weeks Top or Link */}
-                  <div className="col-span-2 sm:col-span-2 flex items-center justify-end gap-2 pr-1">
+                  <div className="col-span-2 sm:col-span-2 flex items-center justify-end pr-1">
                     {activeTab === "alltime" ? (
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                      <span className="text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 truncate">
                         {entry.weekCount ? `${entry.weekCount} wks` : "1 wk"}
                       </span>
                     ) : (

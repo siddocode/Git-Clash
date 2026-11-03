@@ -95,22 +95,22 @@ export default function RankPage() {
   };
 
   return (
-    <div className="bg-white/85 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl dark:shadow-2xl">
+    <div className="bg-white/85 dark:bg-slate-900/50 backdrop-blur-xl border border-slate-200/90 dark:border-white/10 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xl dark:shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 mb-2 border-b border-slate-200/80 dark:border-white/10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-4 mb-2 border-b border-slate-200/80 dark:border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-            <Trophy size={20} />
+          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+            <Trophy size={18} className="sm:w-5 sm:h-5" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span>Live Arena Top 10</span>
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <Radio size={10} className="animate-pulse text-emerald-500" />
+              <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <Radio size={9} className="animate-pulse text-emerald-500 shrink-0" />
                 Live Stream
               </span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
               Updated via Server-Sent Events after every battle
             </p>
           </div>
@@ -118,18 +118,18 @@ export default function RankPage() {
 
         <Link
           href="/liverank"
-          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0 self-start sm:self-center"
         >
           Full Rankings →
         </Link>
       </div>
 
       {/* Table Headers */}
-      <div className="grid grid-cols-12 py-2 px-3 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200/60 dark:border-white/5">
+      <div className="grid grid-cols-12 py-2 px-2 sm:px-3 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200/60 dark:border-white/5">
         <span className="col-span-2 sm:col-span-1">Rank</span>
-        <span className="col-span-5 sm:col-span-5">Developer</span>
-        <span className="col-span-3 sm:col-span-3 text-center">Score</span>
-        <span className="col-span-2 sm:col-span-3 text-right pr-2">Action</span>
+        <span className="col-span-6 sm:col-span-5">Developer</span>
+        <span className="col-span-2 sm:col-span-3 text-center">Score</span>
+        <span className="col-span-2 sm:col-span-3 text-right pr-1">Action</span>
       </div>
 
       {/* Rows */}
@@ -147,7 +147,7 @@ export default function RankPage() {
             <div
               key={user.id}
               className={`
-                grid grid-cols-12 py-3 px-3 border-b border-slate-200/50 dark:border-white/5 last:border-none items-center
+                grid grid-cols-12 py-2.5 sm:py-3 px-2 sm:px-3 border-b border-slate-200/50 dark:border-white/5 last:border-none items-center
                 transition-all duration-500 rounded-xl hover:bg-slate-100/60 dark:hover:bg-white/[0.03]
                 ${eloChanged ? "flash-change" : ""}
               `}
@@ -158,8 +158,8 @@ export default function RankPage() {
               </div>
 
               {/* Developer */}
-              <div className="col-span-5 sm:col-span-5 flex items-center gap-2.5 truncate">
-                <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
+              <div className="col-span-6 sm:col-span-5 flex items-center gap-2 sm:gap-2.5 min-w-0 pr-1">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
                   <Image
                     src={`https://github.com/${user.username}.png`}
                     alt={user.username}
@@ -169,19 +169,19 @@ export default function RankPage() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <span className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                <span className="font-semibold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
                   {user.username}
                 </span>
               </div>
 
               {/* Score */}
-              <div className="col-span-3 sm:col-span-3 text-center flex items-center justify-center gap-1">
-                <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+              <div className="col-span-2 sm:col-span-3 text-center flex items-center justify-center gap-1">
+                <span className="font-extrabold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">
                   {user.elo}
                 </span>
                 {eloChanged && delta !== 0 && (
                   <span
-                    className={`text-[10px] font-bold ${
+                    className={`text-[9px] sm:text-[10px] font-bold ${
                       delta > 0 ? "text-emerald-500" : "text-rose-500"
                     }`}
                   >
@@ -191,7 +191,7 @@ export default function RankPage() {
               </div>
 
               {/* Actions */}
-              <div className="col-span-2 sm:col-span-3 flex items-center justify-end gap-2 pr-1">
+              <div className="col-span-2 sm:col-span-3 flex items-center justify-end gap-1 sm:gap-2 pr-1">
                 <a
                   href={`https://github.com/${user.username}`}
                   target="_blank"
@@ -207,10 +207,10 @@ export default function RankPage() {
                     setSelectedUser(user);
                     setModalOpen(true);
                   }}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition cursor-pointer"
+                  className="p-1 sm:p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition cursor-pointer"
                   title="View Details"
                 >
-                  <Eye size={15} />
+                  <Eye size={14} className="sm:w-[15px] sm:h-[15px]" />
                 </button>
               </div>
             </div>

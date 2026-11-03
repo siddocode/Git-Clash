@@ -77,20 +77,20 @@ export default function AllRanksPage() {
           <span>← Back to Arena Battles</span>
         </Link>
 
-        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           All-Developer Arena Standings
         </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 max-w-md">
+        <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md px-2">
           Complete live Elo ladder across all {totalCount} registered developers.
         </p>
       </div>
 
       {/* Table Container */}
-      <div className="w-full bg-white/85 dark:bg-slate-900/50 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 rounded-3xl p-5 sm:p-6 shadow-xl dark:shadow-2xl">
+      <div className="w-full bg-white/85 dark:bg-slate-900/50 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 shadow-xl dark:shadow-2xl">
         {/* Search & Meta Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 mb-3 border-b border-slate-200/80 dark:border-white/10">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Trophy size={16} className="text-amber-500" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 pb-4 mb-3 border-b border-slate-200/80 dark:border-white/10">
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 self-start sm:self-center">
+            <Trophy size={16} className="text-amber-500 shrink-0" />
             <span>
               Showing {(page - 1) * limit + 1} -{" "}
               {Math.min(page * limit, totalCount)} of {totalCount} developers
@@ -115,11 +115,11 @@ export default function AllRanksPage() {
         </div>
 
         {/* Table Headers */}
-        <div className="grid grid-cols-12 py-2.5 px-3 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200/60 dark:border-white/5">
+        <div className="grid grid-cols-12 py-2 px-2 sm:px-3 text-slate-500 dark:text-slate-400 font-semibold text-xs border-b border-slate-200/60 dark:border-white/5">
           <span className="col-span-2 sm:col-span-1">Rank</span>
-          <span className="col-span-5 sm:col-span-6">Developer</span>
-          <span className="col-span-3 sm:col-span-3 text-center">Score</span>
-          <span className="col-span-2 sm:col-span-2 text-right pr-2">Profile</span>
+          <span className="col-span-6 sm:col-span-6">Developer</span>
+          <span className="col-span-2 sm:col-span-3 text-center">Score</span>
+          <span className="col-span-2 sm:col-span-2 text-right pr-1 sm:pr-2">Profile</span>
         </div>
 
         {/* Rows */}
@@ -140,14 +140,14 @@ export default function AllRanksPage() {
               return (
                 <div
                   key={user.id}
-                  className="grid grid-cols-12 py-3 px-3 items-center rounded-xl hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors"
+                  className="grid grid-cols-12 py-2.5 sm:py-3 px-2 sm:px-3 items-center rounded-xl hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="col-span-2 sm:col-span-1 font-bold text-xs text-slate-400">
                     #{globalRank}
                   </div>
 
-                  <div className="col-span-5 sm:col-span-6 flex items-center gap-3 truncate">
-                    <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
+                  <div className="col-span-6 sm:col-span-6 flex items-center gap-2 sm:gap-3 min-w-0 pr-1">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
                       <Image
                         src={`https://github.com/${user.username}.png`}
                         alt={user.username}
@@ -157,33 +157,33 @@ export default function AllRanksPage() {
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <span className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                    <span className="font-semibold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
                       {user.username}
                     </span>
                   </div>
 
-                  <div className="col-span-3 sm:col-span-3 text-center">
-                    <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                  <div className="col-span-2 sm:col-span-3 text-center">
+                    <span className="font-extrabold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400">
                       {user.elo}
                     </span>
                   </div>
 
-                  <div className="col-span-2 sm:col-span-2 flex items-center justify-end gap-2 pr-1">
+                  <div className="col-span-2 sm:col-span-2 flex items-center justify-end gap-1 sm:gap-2 pr-1">
                     <button
                       onClick={() => {
                         setSelectedUser(user);
                         setModalOpen(true);
                       }}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition cursor-pointer"
+                      className="p-1 sm:p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition cursor-pointer"
                       title="Inspect Profile"
                     >
-                      <Eye size={15} />
+                      <Eye size={14} className="sm:w-[15px] sm:h-[15px]" />
                     </button>
                     <a
                       href={`https://github.com/${user.username}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition"
+                      className="hidden sm:inline-flex p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition"
                       title="GitHub Profile"
                     >
                       <ExternalLink size={15} />
@@ -196,12 +196,12 @@ export default function AllRanksPage() {
         )}
 
         {/* Pagination Controls */}
-        <div className="mt-6 pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+        <div className="mt-6 pt-4 border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between gap-2">
           <button
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             className={`
-              flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold
+              flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold
               bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 transition
               ${
                 page <= 1
@@ -211,10 +211,10 @@ export default function AllRanksPage() {
             `}
           >
             <ChevronLeft size={14} />
-            <span>Previous</span>
+            <span className="hidden xs:inline">Previous</span>
           </button>
 
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] sm:text-xs font-medium text-slate-500 dark:text-slate-400 text-center">
             Page <span className="font-bold text-slate-800 dark:text-white">{page}</span> of{" "}
             <span className="font-bold text-slate-800 dark:text-white">{totalPages}</span>
           </span>
@@ -223,7 +223,7 @@ export default function AllRanksPage() {
             disabled={page >= totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             className={`
-              flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold
+              flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-semibold
               bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 transition
               ${
                 page >= totalPages
@@ -232,7 +232,7 @@ export default function AllRanksPage() {
               }
             `}
           >
-            <span>Next</span>
+            <span className="hidden xs:inline">Next</span>
             <ChevronRight size={14} />
           </button>
         </div>
