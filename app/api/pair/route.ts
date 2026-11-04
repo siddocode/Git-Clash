@@ -92,7 +92,7 @@ export async function GET() {
     // Build a pre-fetched pool of candidates so the frontend has challengers ready in memory
     const remaining = allProfiles.filter((p) => p.id !== A.id && p.id !== B.id);
     const pool = [];
-    for (let i = 0; i < Math.min(6, remaining.length); i++) {
+    for (let i = 0; i < Math.min(10, remaining.length); i++) {
       const idx = Math.floor(Math.random() * remaining.length);
       pool.push(remaining.splice(idx, 1)[0]);
     }

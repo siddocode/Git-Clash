@@ -64,18 +64,38 @@ export default function Card() {
 
   const queueRef = useRef<ProfileCardData[]>([]);
   queueRef.current = queue;
+  const isReplenishingRef = useRef(false);
 
   const replenishQueue = async (currentWinnerId: number, currentLoserId: number) => {
+    if (isReplenishingRef.current) return;
+    isReplenishingRef.current = true;
     try {
-      const res = await axios.get(`/api/one?winner=${currentWinnerId}&loser=${currentLoserId}`);
-      if (res.status === 200 && res.data.result) {
-        setQueue((prev) => {
-          if (prev.some((p) => p.id === res.data.result.id)) return prev;
-          return [...prev, res.data.result];
-        });
+      const res = await axios.get(
+        `/api/one?winner=${currentWinnerId}&loser=${currentLoserId}&count=6`
+      );
+      if (res.status === 200) {
+        const incoming: ProfileCardData[] = Array.isArray(res.data.results)
+          ? res.data.results
+          : res.data.result
+          ? [res.data.result]
+          : [];
+
+        if (incoming.length > 0) {
+          setQueue((prev) => {
+            const existingIds = new Set([
+              ...prev.map((p) => p.id),
+              currentWinnerId,
+              currentLoserId,
+            ]);
+            const fresh = incoming.filter((p) => !existingIds.has(p.id));
+            return [...prev, ...fresh];
+          });
+        }
       }
     } catch {
       // Non-critical background replenish
+    } finally {
+      isReplenishingRef.current = false;
     }
   };
 
@@ -138,7 +158,6 @@ export default function Card() {
     }, 400);
 
     setWinnerAnimationIndex(winnerIndex);
-    setAnimatingOutIndex(loserIndex);
 
     // 4. Instantly bump the winner's Elo on screen in 0 milliseconds
     setPair((prev) => {
@@ -158,6 +177,8 @@ export default function Card() {
     }
 
     if (nextChallenger) {
+      // Only animate out when we have a new challenger ready immediately
+      setAnimatingOutIndex(loserIndex);
       setTimeout(() => {
         setPair((prev) => {
           return prev.map((p) => (p.id === loser.id ? nextChallenger! : p));
@@ -168,6 +189,11 @@ export default function Card() {
         setTimeout(() => setAnimatingInIndex(null), 200);
         setVotingIndex(null);
       }, 100);
+    }
+
+    // Proactively replenish queue in background whenever running low
+    if (currentQueue.length < 5) {
+      replenishQueue(winner.id, loser.id);
     }
 
     // 6. Synchronize with backend API in background
@@ -190,17 +216,20 @@ export default function Card() {
 
         // If no queued challenger was loaded at click time, swap in the server's challenger
         if (!nextChallenger && res.data.nextProfile) {
-          setPair((prev) => {
-            return prev.map((p) => (p.id === loser.id ? res.data.nextProfile : p));
-          });
-          setAnimatingOutIndex(null);
-          setAnimatingInIndex(loserIndex);
-          setTimeout(() => setAnimatingInIndex(null), 200);
-          setVotingIndex(null);
+          setAnimatingOutIndex(loserIndex);
+          setTimeout(() => {
+            setPair((prev) => {
+              return prev.map((p) => (p.id === loser.id ? res.data.nextProfile : p));
+            });
+            setAnimatingOutIndex(null);
+            setAnimatingInIndex(loserIndex);
+            setTimeout(() => setAnimatingInIndex(null), 200);
+            setVotingIndex(null);
+          }, 80);
         }
 
-        // Add server's fresh profile to the queue for upcoming rounds
-        if (res.data.nextProfile) {
+        // Add server's fresh profile to the queue ONLY if it wasn't already mounted
+        if (res.data.nextProfile && nextChallenger) {
           setQueue((prev) => {
             if (prev.some((p) => p.id === res.data.nextProfile.id)) return prev;
             return [...prev, res.data.nextProfile];
@@ -208,7 +237,7 @@ export default function Card() {
         }
 
         // Keep queue healthy
-        if (currentQueue.length < 3) {
+        if (queueRef.current.length < 5) {
           replenishQueue(winner.id, loser.id);
         }
       }
@@ -219,6 +248,7 @@ export default function Card() {
       }
     } finally {
       setVotingIndex(null);
+      setAnimatingOutIndex(null);
       setTimeout(() => {
         setWinnerAnimationIndex(null);
       }, 800);

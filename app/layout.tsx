@@ -31,11 +31,11 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-screen max-w-4xl mx-auto px-2.5 sm:px-6 transition-colors duration-300 overflow-x-clip">
+      <body className="min-h-screen w-full px-2.5 sm:px-6 transition-colors duration-300 overflow-x-clip">
         <ThemeProvider>
           <FingerPrintLoader />
           <Navbar />
-          <main className="pt-20 sm:pt-24 pb-12 w-full">{children}</main>
+          <main className="pt-20 sm:pt-24 pb-12 w-full max-w-4xl mx-auto">{children}</main>
         </ThemeProvider>
       </body>
     </html>

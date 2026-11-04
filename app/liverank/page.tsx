@@ -170,6 +170,7 @@ export default function AllRanksPage() {
 
                   <div className="col-span-2 sm:col-span-2 flex items-center justify-end gap-1 sm:gap-2 pr-1">
                     <button
+                      type="button"
                       onClick={() => {
                         setSelectedUser(user);
                         setModalOpen(true);
@@ -243,14 +244,13 @@ export default function AllRanksPage() {
         open={modalOpen}
         onClose={() => {
           setModalOpen(false);
-          setSelectedUser(null);
         }}
       >
         {selectedUser && (
           <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/20 shadow-xl mb-4">
+            <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-white/20 shadow-xl mb-4 bg-slate-100 dark:bg-white/5">
               <Image
-                src={`https://github.com/${selectedUser.username}.png`}
+                src={selectedUser.avatarUrl?.trim() || `https://github.com/${selectedUser.username}.png`}
                 width={96}
                 height={96}
                 unoptimized

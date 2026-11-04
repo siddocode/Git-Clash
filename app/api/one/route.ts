@@ -64,10 +64,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const nextProfile =
-      candidates[Math.floor(Math.random() * candidates.length)];
+    const countParam = Number(req.nextUrl.searchParams.get("count"));
+    const count = Number.isFinite(countParam) && countParam > 1 ? Math.min(countParam, 10) : 1;
 
-    return NextResponse.json({ result: nextProfile });
+    // Shuffle candidates to return varied challengers
+    const shuffled = [...candidates].sort(() => 0.5 - Math.random());
+    const results = shuffled.slice(0, count);
+
+    return NextResponse.json({
+      result: results[0],
+      results: results,
+    });
   } catch (err) {
     console.error("ONE ERROR", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
